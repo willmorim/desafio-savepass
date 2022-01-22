@@ -1,10 +1,10 @@
-import React, { useState, useCallback } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useFocusEffect } from '@react-navigation/native';
+import React, { useState, useCallback } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useFocusEffect } from "@react-navigation/native";
 
-import { Header } from '../../components/Header';
-import { SearchBar } from '../../components/SearchBar';
-import { LoginDataItem } from '../../components/LoginDataItem';
+import { Header } from "../../components/Header";
+import { SearchBar } from "../../components/SearchBar";
+import { LoginDataItem } from "../../components/LoginDataItem";
 
 import {
   Container,
@@ -12,7 +12,7 @@ import {
   Title,
   TotalPassCount,
   LoginList,
-} from './styles';
+} from "./styles";
 
 interface LoginDataProps {
   id: string;
@@ -24,33 +24,55 @@ interface LoginDataProps {
 type LoginListDataProps = LoginDataProps[];
 
 export function Home() {
-  const [searchText, setSearchText] = useState('');
+  const [searchText, setSearchText] = useState("");
   const [searchListData, setSearchListData] = useState<LoginListDataProps>([]);
   const [data, setData] = useState<LoginListDataProps>([]);
 
   async function loadData() {
-    const dataKey = '@savepass:logins';
+    const dataKey = "@savepass:logins";
     // Get asyncStorage data, use setSearchListData and setData
+    const response = await AsyncStorage.getItem(dataKey);
+    const listData = response ? JSON.parse(response) : [];
+
+    setSearchListData(listData);
+    setData(listData);
   }
 
   function handleFilterLoginData() {
     // Filter results inside data, save with setSearchListData
+    const datafiltered = searchListData.filter((data) => {
+      const hasServiceName = data.service_name
+        .toLowerCase()
+        .includes(searchText.toLocaleLowerCase());
+
+      if (hasServiceName) {
+        return data;
+      }
+    });
+
+    setSearchListData(datafiltered);
   }
 
   function handleChangeInputText(text: string) {
     // Update searchText value
+    if (!text) {
+      setSearchListData(data);
+    }
+    setSearchText(text);
   }
 
-  useFocusEffect(useCallback(() => {
-    loadData();
-  }, []));
+  useFocusEffect(
+    useCallback(() => {
+      loadData();
+    }, [])
+  );
 
   return (
     <>
       <Header
         user={{
-          name: 'Rocketseat',
-          avatar_url: 'https://i.ibb.co/ZmFHZDM/rocketseat.jpg'
+          name: "Rocketseat",
+          avatar_url: "https://i.ibb.co/ZmFHZDM/rocketseat.jpg",
         }}
       />
       <Container>
@@ -60,7 +82,6 @@ export function Home() {
           value={searchText}
           returnKeyType="search"
           onSubmitEditing={handleFilterLoginData}
-
           onSearchButtonPress={handleFilterLoginData}
         />
 
@@ -68,9 +89,8 @@ export function Home() {
           <Title>Suas senhas</Title>
           <TotalPassCount>
             {searchListData.length
-              ? `${`${searchListData.length}`.padStart(2, '0')} ao total`
-              : 'Nada a ser exibido'
-            }
+              ? `${`${searchListData.length}`.padStart(2, "0")} ao total`
+              : "Nada a ser exibido"}
           </TotalPassCount>
         </Metadata>
 
@@ -78,14 +98,16 @@ export function Home() {
           keyExtractor={(item) => item.id}
           data={searchListData}
           renderItem={({ item: loginData }) => {
-            return <LoginDataItem
-              service_name={loginData.service_name}
-              email={loginData.email}
-              password={loginData.password}
-            />
+            return (
+              <LoginDataItem
+                service_name={loginData.service_name}
+                email={loginData.email}
+                password={loginData.password}
+              />
+            );
           }}
         />
       </Container>
     </>
-  )
+  );
 }
